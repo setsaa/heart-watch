@@ -1,40 +1,52 @@
-import altair as alt
-import numpy as np
-import pandas as pd
 import streamlit as st
+import pymongo
+from pymongo.errors import ServerSelectionTimeoutError
+from datetime import datetime
 
-"""
-# Welcome to Streamlit!
+st.title("Hjertekramper 🫀💢")
 
-Edit `/streamlit_app.py` to customize this app to your heart's desire :heart:.
-If you have any questions, checkout our [documentation](https://docs.streamlit.io) and [community
-forums](https://discuss.streamlit.io).
+# Load secrets or configuration
+mongo_config = {
+    "uri": st.secrets["mongo"]["uri"]
+}
 
-In the meantime, below is an example of what you can do with just a few lines of code:
-"""
+# Initialize connection.
+# Uses st.cache_resource to only run once.
+@st.cache_resource()
+def init_connection():
+    try:
+        client = pymongo.MongoClient(mongo_config["uri"])
+        client.server_info()  # Check if the client can connect to the server
+        return client
+    except ServerSelectionTimeoutError as err:
+        st.error(f"Failed to connect to MongoDB: {err}")
+        return None
 
-num_points = st.slider("Number of points in spiral", 1, 10000, 1100)
-num_turns = st.slider("Number of turns in spiral", 1, 300, 31)
+client = init_connection()
 
-indices = np.linspace(0, 1, num_points)
-theta = 2 * np.pi * num_turns * indices
-radius = indices
+if client:
+    # Function to insert a new heart cramp event
+    def insert_heart_cramp():
+        db = client.get_database("mydb")
+        collection = db.get_collection("heart_cramps")
+        current_time = datetime.now()
+        collection.insert_one({"timestamp": current_time})
+        st.success("Hjertekrampe registrert.")
 
-x = radius * np.cos(theta)
-y = radius * np.sin(theta)
+    # Display UI to insert a new heart cramp event
+    if st.button("Jeg har hjertekrampe nå"):
+        insert_heart_cramp()
 
-df = pd.DataFrame({
-    "x": x,
-    "y": y,
-    "idx": indices,
-    "rand": np.random.randn(num_points),
-})
+    # Display all recorded heart cramp events
+    st.subheader("Registrerte hjertekramper:")
+    db = client.get_database("mydb")
+    collection = db.get_collection("heart_cramps")
+    events = collection.find()
 
-st.altair_chart(alt.Chart(df, height=700, width=700)
-    .mark_point(filled=True)
-    .encode(
-        x=alt.X("x", axis=None),
-        y=alt.Y("y", axis=None),
-        color=alt.Color("idx", legend=None, scale=alt.Scale()),
-        size=alt.Size("rand", legend=None, scale=alt.Scale(range=[1, 150])),
-    ))
+    for event in events:
+        time = event['timestamp']
+        formatted_time = time.strftime("%d.%m.%y – %H:%M")
+        st.write(f"- Tidspunkt: {formatted_time}")
+
+else:
+    st.error("Could not establish a connection to MongoDB.")
