@@ -1,19 +1,5 @@
-# 🌀 Spiral template
+# Heart Watch
 
-A simple Streamlit app that draws a spiral. 
+Simple web-app through Streamlit that let's you track heart related episodes such as heart cramps, heart palpitations and general heart pain.
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://basic-template.streamlit.app/)
-
-### How to run it on your own machine
-
-1. Install the requirements
-
-   ```
-   $ pip install -r requirements.txt
-   ```
-
-2. Run the app
-
-   ```
-   $ streamlit run streamlit_app.py
-   ```
+_PS: This app is secured through streamlit, which is why it looks like there are exposed keys in the code._
